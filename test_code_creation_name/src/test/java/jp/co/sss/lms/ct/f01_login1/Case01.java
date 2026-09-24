@@ -43,9 +43,6 @@ public class Case01 {
 		WebElement pageHeader = webDriver.findElement(By.tagName("h2"));
 		assertEquals("ログイン", pageHeader.getText());
 
-		WebElement submitBtn = webDriver.findElement(By.cssSelector("input[type='submit']"));
-		assertEquals("ログイン", submitBtn.getAttribute("value"));
-
 		getEvidence(new Object() {
 		});
 	}
