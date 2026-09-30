@@ -82,12 +82,23 @@ public class Case08 {
 
 	@Test
 	@Order(3)
-	@DisplayName("テスト03 提出済の研修日の「詳細」ボタンを押下しセクション詳細画面に遷移")
+	@DisplayName("テスト03 提出済の研修日（週報）の「詳細」ボタンを押下しセクション詳細画面に遷移")
 	void test03() {
-		By submittedDetailBtn = By.xpath("//tr[td/span[text()='提出済み']]//input[@value='詳細']");
-		driver.findElement(submittedDetailBtn).click();
+		// 「2025年7月9日」が含まれる行の「詳細」ボタンをピンポイントで取得
+		By weeklyDetailBtn = By.xpath("//tr[td[contains(text(),'7月9日')]]//input[@value='詳細']");
 
-		scrollTo("400");
+		// 万が一「7月9日」の記述で見つからない場合の予備（2つ目の「提出済み」ボタンを取得）
+		if (driver.findElements(weeklyDetailBtn).isEmpty()) {
+			weeklyDetailBtn = By.xpath("(//tr[td/span[text()='提出済み']]//input[@value='詳細'])[2]");
+		}
+
+		WebElement detailBtnElement = driver.findElement(weeklyDetailBtn);
+
+		// ボタンが見える位置までスクロール（ヘッダー被り防止）
+		((org.openqa.selenium.JavascriptExecutor) driver)
+				.executeScript("arguments[0].scrollIntoView({block: 'center'});", detailBtnElement);
+
+		detailBtnElement.click();
 
 		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 		wait.until(ExpectedConditions.titleIs("セクション詳細 | LMS"));
@@ -101,11 +112,17 @@ public class Case08 {
 
 	@Test
 	@Order(4)
-	@DisplayName("テスト04 「確認する」ボタンを押下しレポート登録画面に遷移")
+	@DisplayName("テスト04 「提出済み週報【デモ】を確認する」ボタンを押下しレポート登録画面に遷移")
 	void test04() {
-		driver.findElement(By.cssSelector("input[value*='を確認する']")).click();
+		// ボタン要素の取得
+		By checkBtn = By.cssSelector("input[value*='を確認する']");
+		WebElement checkBtnElement = driver.findElement(checkBtn);
 
-		scrollTo("500");
+		// ボタンが画面の中央に来るようにスクロール（要素被りを防止）
+		((org.openqa.selenium.JavascriptExecutor) driver)
+				.executeScript("arguments[0].scrollIntoView({block: 'center'});", checkBtnElement);
+
+		checkBtnElement.click();
 
 		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 		wait.until(ExpectedConditions.titleIs("レポート登録 | LMS"));
@@ -126,23 +143,25 @@ public class Case08 {
 		inputText0.clear();
 		inputText0.sendKeys("研修内容の報告修正テストです。");
 
-		// 2つ目の入力欄が存在する場合は入力（週報の場合）
+		// 2つ目の入力欄が存在する場合のみ入力（週報の場合）
 		if (!driver.findElements(By.id("content_1")).isEmpty()) {
 			WebElement inputText1 = driver.findElement(By.id("content_1"));
 			inputText1.clear();
 			inputText1.sendKeys("テスト");
 		}
 
-		// 3つ目の入力欄が存在する場合は入力（週報の場合）
+		// 3つ目の入力欄が存在する場合のみ入力（週報の場合）
 		if (!driver.findElements(By.id("content_2")).isEmpty()) {
 			WebElement inputText2 = driver.findElement(By.id("content_2"));
 			inputText2.clear();
 			inputText2.sendKeys("テスト");
 		}
 
-		scrollTo("500");
-
-		driver.findElement(By.cssSelector("button[type='submit']")).click();
+		// 「提出する」ボタンを取得してスクロール表示後クリック
+		WebElement submitBtn = driver.findElement(By.cssSelector("button[type='submit']"));
+		((org.openqa.selenium.JavascriptExecutor) driver)
+				.executeScript("arguments[0].scrollIntoView({block: 'center'});", submitBtn);
+		submitBtn.click();
 
 		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 		wait.until(ExpectedConditions.titleIs("セクション詳細 | LMS"));
