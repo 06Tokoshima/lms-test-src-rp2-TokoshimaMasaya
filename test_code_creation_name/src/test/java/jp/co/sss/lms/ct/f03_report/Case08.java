@@ -23,6 +23,7 @@ import jp.co.sss.lms.ct.util.WebDriverUtils;
 /**
  * 結合テスト レポート機能
  * ケース08
+ * 
  * @author holy
  */
 @TestMethodOrder(OrderAnnotation.class)
@@ -73,7 +74,6 @@ public class Case08 {
 		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 		wait.until(ExpectedConditions.titleIs("コース詳細 | LMS"));
 
-		assertEquals("コース詳細 | LMS", driver.getTitle());
 		assertTrue(driver.findElement(By.cssSelector("input[value='詳細']")).isDisplayed());
 
 		getEvidence(new Object() {
@@ -84,12 +84,12 @@ public class Case08 {
 	@Order(3)
 	@DisplayName("テスト03 提出済の研修日（週報）の「詳細」ボタンを押下しセクション詳細画面に遷移")
 	void test03() {
-		// 「2025年7月9日」が含まれる行の「詳細」ボタンをピンポイントで取得
+		// 「7月9日」または「試験有（週報のある研修日）」が含まれる行の「詳細」ボタンを確実に指定
 		By weeklyDetailBtn = By.xpath("//tr[td[contains(text(),'7月9日')]]//input[@value='詳細']");
 
-		// 万が一「7月9日」の記述で見つからない場合の予備（2つ目の「提出済み」ボタンを取得）
+		// 万が一「7月9日」の記述がない場合は「週報」または「試験有」の行を取得
 		if (driver.findElements(weeklyDetailBtn).isEmpty()) {
-			weeklyDetailBtn = By.xpath("(//tr[td/span[text()='提出済み']]//input[@value='詳細'])[2]");
+			weeklyDetailBtn = By.xpath("//tr[contains(.,'試験有') or contains(.,'週報')]//input[@value='詳細']");
 		}
 
 		WebElement detailBtnElement = driver.findElement(weeklyDetailBtn);
@@ -114,11 +114,16 @@ public class Case08 {
 	@Order(4)
 	@DisplayName("テスト04 「提出済み週報【デモ】を確認する」ボタンを押下しレポート登録画面に遷移")
 	void test04() {
-		// ボタン要素の取得
-		By checkBtn = By.cssSelector("input[value*='を確認する']");
+		// 「週報」と「確認する」が含まれるボタンをピンポイントで指定（日報の誤クリックを防止）
+		By checkBtn = By.xpath("//input[contains(@value,'週報') and contains(@value,'確認する')]");
+
+		// もし値で取れない場合は「確認する」ボタンの末尾（週報側）を取得
+		if (driver.findElements(checkBtn).isEmpty()) {
+			checkBtn = By.xpath("(//input[contains(@value,'確認する')])[last()]");
+		}
+
 		WebElement checkBtnElement = driver.findElement(checkBtn);
 
-		// ボタンが画面の中央に来るようにスクロール（要素被りを防止）
 		((org.openqa.selenium.JavascriptExecutor) driver)
 				.executeScript("arguments[0].scrollIntoView({block: 'center'});", checkBtnElement);
 
@@ -141,23 +146,22 @@ public class Case08 {
 		// 1つ目の入力欄（日報・週報共通）
 		WebElement inputText0 = driver.findElement(By.id("content_0"));
 		inputText0.clear();
-		inputText0.sendKeys("研修内容の報告修正テストです。");
+		inputText0.sendKeys("2");
 
 		// 2つ目の入力欄が存在する場合のみ入力（週報の場合）
 		if (!driver.findElements(By.id("content_1")).isEmpty()) {
 			WebElement inputText1 = driver.findElement(By.id("content_1"));
 			inputText1.clear();
-			inputText1.sendKeys("テスト");
+			inputText1.sendKeys("週報修正テスト項目1");
 		}
 
 		// 3つ目の入力欄が存在する場合のみ入力（週報の場合）
 		if (!driver.findElements(By.id("content_2")).isEmpty()) {
 			WebElement inputText2 = driver.findElement(By.id("content_2"));
 			inputText2.clear();
-			inputText2.sendKeys("テスト");
+			inputText2.sendKeys("週報修正テスト項目2");
 		}
 
-		// 「提出する」ボタンを取得してスクロール表示後クリック
 		WebElement submitBtn = driver.findElement(By.cssSelector("button[type='submit']"));
 		((org.openqa.selenium.JavascriptExecutor) driver)
 				.executeScript("arguments[0].scrollIntoView({block: 'center'});", submitBtn);
@@ -193,9 +197,20 @@ public class Case08 {
 	@Order(7)
 	@DisplayName("テスト07 該当レポートの「詳細」ボタンを押下しレポート詳細画面で修正内容が反映される")
 	void test07() {
-		scrollTo("200");
+		// マイページのレポート一覧から「週報」の行にある「詳細」ボタンを特定
+		By weeklyDetailInMyPage = By.xpath("//tr[contains(.,'週報')]//input[@value='詳細']");
 
-		driver.findElement(By.cssSelector("input[value='詳細']")).click();
+		if (driver.findElements(weeklyDetailInMyPage).isEmpty()) {
+			weeklyDetailInMyPage = By.xpath("(//input[@value='詳細'])[2]");
+		}
+
+		WebElement detailBtnElement = driver.findElement(weeklyDetailInMyPage);
+
+		// ボタンが画面の中央に来るようにスクロール（被り防止）
+		((org.openqa.selenium.JavascriptExecutor) driver)
+				.executeScript("arguments[0].scrollIntoView({block: 'center'});", detailBtnElement);
+
+		detailBtnElement.click();
 
 		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 		wait.until(ExpectedConditions.titleIs("レポート詳細 | LMS"));
